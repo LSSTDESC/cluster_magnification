@@ -6,6 +6,7 @@ from astropy import units as u
 from astropy import constants as const
 import clmm.modeling as mod
 from clmm import utils 
+import scipy.interpolate as itp
 
 
 
@@ -303,3 +304,10 @@ def z_mean(func, a, b):
     num = integrate.quad(lambda x: func(x)*x, a, b)
     den = integrate.quad(lambda x: func(x), a, b)
     return num[0]/den[0]
+
+def zpdf_from_hist(hist, zmin=0, zmax=10):
+    """'hist' must be defined with density=True, stacked=True""" 
+    zbinc = np.insert(bin_center(hist[1]), [0, bin_center(hist[1]).size], [zmin,zmax])
+    zdf_val = np.insert(hist[0], [0, hist[0].size], [0,0])
+    pdf_zsource = itp.interp1d(zbinc, zdf_val)
+    return pdf_zsource
