@@ -4,7 +4,7 @@ from scipy.stats import skewnorm
 import scipy.integrate as integrate
 from astropy import units as u
 from astropy import constants as const
-import clmm.modeling as mod
+from clmm import Modeling as mod
 from clmm import utils 
 import scipy.interpolate as itp
 
@@ -106,15 +106,15 @@ def compute_source_number_per_bin(rmin, rmax, radial_unit, lens_redshift, source
     
     return bin_center, binedges, Ngal
 
-def modele_determination(bin_center, radial_unit, lens_redshift, mass, profile_type, dict_profile, cosmo, conc=3.0, delta_mdef=200, zinf=1e10):
+def modele_determination(bin_center, radial_unit, lens_redshift, mass, profile_type, dict_profile, clmm_cosmo, conc=3.0, delta_mdef=200, zinf=1e10):
     
     """Computes the model at the position of the bin_center. This is not precise enough (biased) when their is only few galaxies per bin. Rather take the mean radius of the galaxies in the bin (not yet implemented).
     'conc', the concentration, can be a float for a fixed value or an array with the same size as the mass in case each concentrationapply to a different mass."""
     
-    if profile_type != "reduced shear" and profile_type != "magnification LBG" and profile_type != "magnification QSO":
+    if profile_type != "shear"  and profile_type != "reduced shear" and profile_type != "magnification LBG" and profile_type != "magnification QSO":
         print("Wrong profile type")
 
-    rad_Mpc = utils.convert_units(bin_center, radial_unit, 'Mpc', lens_redshift, cosmo)
+    rad_Mpc = utils.convert_units(bin_center, radial_unit, 'Mpc', lens_redshift, clmm_cosmo)
         
     if isinstance(mass, (list, tuple, np.ndarray)):
         model_inf = np.zeros((rad_Mpc.size, len(mass)))
@@ -125,36 +125,36 @@ def modele_determination(bin_center, radial_unit, lens_redshift, mass, profile_t
         
         for i in range(len(mass)):
             model_inf[:,i] = dict_profile[profile_type]['model_arg']  * \
-                                        dict_profile[profile_type]['model_func'](rad_Mpc*cosmo.h, mdelta=mass[i]*cosmo.h, 
+                                        dict_profile[profile_type]['model_func'](rad_Mpc, mdelta=mass[i], 
                                         cdelta=conc[i], z_cluster=lens_redshift, z_source=zinf, 
-                                        cosmo= mod.cclify_astropy_cosmo(cosmo), 
+                                        cosmo= clmm_cosmo, 
                                         delta_mdef=delta_mdef, 
-                                        halo_profile_model='NFW', 
+                                        halo_profile_model='nfw', 
                                         z_src_model='single_plane')   
     else:    
     
         model_inf = dict_profile[profile_type]['model_arg']  * \
-                                        dict_profile[profile_type]['model_func'](rad_Mpc*cosmo.h, mdelta=mass*cosmo.h, 
+                                        dict_profile[profile_type]['model_func'](rad_Mpc, mdelta=mass, 
                                         cdelta=conc, z_cluster=lens_redshift, z_source=zinf, 
-                                        cosmo= mod.cclify_astropy_cosmo(cosmo), 
+                                        cosmo= clmm_cosmo, 
                                         delta_mdef=delta_mdef, 
-                                        halo_profile_model='NFW', 
+                                        halo_profile_model='nfw', 
                                         z_src_model='single_plane')  
     
     
-    model = compute_Bs_mean(lens_redshift, zinf, dict_profile[profile_type]['source_pdz'], cosmo) * model_inf
+    model = compute_Bs_mean(lens_redshift, zinf, dict_profile[profile_type]['source_pdz'], clmm_cosmo.be_cosmo) * model_inf
     
     return model
 
 
-def profile_determination(rmin, rmax, radial_unit, lens_redshift, mass, profile_type, dict_profile, cosmo, nbins=10, method='evenwidth', conc=3.0, delta_mdef=200, zinf=1e10):
+def profile_determination(rmin, rmax, radial_unit, lens_redshift, mass, profile_type, dict_profile, clmm_cosmo, nbins=10, method='evenwidth', conc=3.0, delta_mdef=200, zinf=1e10):
 
-    if profile_type != "reduced shear" and profile_type != "magnification LBG" and profile_type != "magnification QSO":
+    if profile_type != "shear"  and profile_type != "reduced shear" and profile_type != "magnification LBG" and profile_type != "magnification QSO":
         print("Wrong profile type")        
     
-    bin_center, bin_edges, Ngal = compute_source_number_per_bin(rmin, rmax, radial_unit , lens_redshift, dict_profile[profile_type]['source_pdz'], dict_profile[profile_type]['source_density'], nbins=nbins, method=method, cosmo=cosmo)
+    bin_center, bin_edges, Ngal = compute_source_number_per_bin(rmin, rmax, radial_unit , lens_redshift, dict_profile[profile_type]['source_pdz'], dict_profile[profile_type]['source_density'], nbins=nbins, method=method, cosmo=clmm_cosmo)
     noise = dict_profile[profile_type]['noise_func'](Ngal)
-    model = modele_determination(bin_center, radial_unit, lens_redshift, mass, profile_type, dict_profile, cosmo, conc, delta_mdef, zinf)
+    model = modele_determination(bin_center, radial_unit, lens_redshift, mass, profile_type, dict_profile, clmm_cosmo, conc, delta_mdef, zinf)
     
     return bin_center, bin_edges, model, noise
 
