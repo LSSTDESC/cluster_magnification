@@ -38,7 +38,7 @@ else :
     
     filters = ['redshift<10.', 'mag_i_lsst<26.', 'halo_id>-1']
 
-    gal_selection = extragalactic_cat.get_quantities(['mag_u_lsst', 'mag_g_lsst', 'mag_r_lsst', 'mag_i_lsst', 'mag_z_lsst', 'mag_y_lsst', 'redshift','ra', 'dec', 'shear_1', 'shear_2', 'convergence', 'magnification'], filters=filters)
+    gal_selection = extragalactic_cat.get_quantities(['mag_u_lsst', 'mag_g_lsst', 'mag_r_lsst', 'mag_i_lsst', 'mag_z_lsst', 'mag_y_lsst', 'redshift','ra', 'dec', 'shear_1', 'shear_2', 'convergence', 'magnification', 'mag_true_i_lsst', 'ra_true', 'dec_true'], filters=filters)
 
     gal_cat = Table(gal_selection)
 
