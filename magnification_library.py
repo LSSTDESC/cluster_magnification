@@ -8,7 +8,7 @@ from clmm import Modeling as mod
 from clmm import utils 
 import scipy.interpolate as itp
 from scipy import stats
-
+import types
 
 #____________________utils
 
@@ -116,7 +116,12 @@ def compute_source_number_per_bin(rmin, rmax, radial_unit, lens_redshift, source
     bin_center_arcmin = binedges_arcmin[0:-1] + (binedges_arcmin[1:]  - binedges_arcmin[0:-1])/2.
     area = (np.pi * (binedges_arcmin[1:]**2 - binedges_arcmin[0:-1]**2))
     
-    Ngal = integrate.quad(source_pdz , lens_redshift + delta_z_cut, np.inf)[0] * (source_density * area).value
+    if isinstance(source_pdz,  types.FunctionType):
+        norm =  integrate.quad(source_pdz , lens_redshift + delta_z_cut, np.inf)[0]
+    elif isinstance(source_pdz,  itp.interp1d):
+        norm = np.sum(source_pdz.y[source_pdz.x>(lens_redshift + delta_z_cut)]) / np.sum(source_pdz.y)
+        
+    Ngal = norm * (source_density * area).value
     
     return bin_center, binedges, Ngal
 
@@ -143,7 +148,7 @@ def modele_determination(bin_center, radial_unit, lens_redshift, mass, profile_t
         elif not isinstance(mass, (list, tuple, np.ndarray)) and isinstance(conc, (list, tuple, np.ndarray)):
             mass = np.ones(len(conc)) * mass
             
-        if profile_type != "redshift depth contrast":
+        if profile_type != "redshift depth contrast" and profile_type != "density contrast":
             
             if isinstance(mass, (list, tuple, np.ndarray)):
                 model_inf = np.zeros((rad_Mpc.size, len(mass)))
@@ -169,6 +174,45 @@ def modele_determination(bin_center, radial_unit, lens_redshift, mass, profile_t
 
             model = compute_Bs_mean(lens_redshift, zinf, dict_profile[profile_type]['source_pdz'], clmm_cosmo) * model_inf
             
+            return model
+        
+        
+        if profile_type == "density contrast":
+            
+            func = dict_profile[profile_type]['source_pdz']
+            
+            zmin, zmax, nz = 0.001, 5, 10000
+            zint = np.linspace(zmin, zmax, nz)
+            zrand = np.random.choice(zint, 1000, p=func(zint)/np.sum(func(zint)))
+            
+            
+            if isinstance(mass, (list, tuple, np.ndarray)):
+                
+                model = np.zeros((rad_Mpc.size, len(mass)))
+                               
+                for i in range(rad_Mpc.size):
+                    for j in range(len(mass)):
+                        #dict_profile[profile_type]['model_arg']  * \
+                        model[i,j] = np.mean(dict_profile[profile_type]['model_func'](rad_Mpc[i], mdelta=mass[j], 
+                                                    cdelta=conc[j], z_cluster=lens_redshift, z_source=zrand, 
+                                                    cosmo= clmm_cosmo, 
+                                                    delta_mdef=delta_mdef, 
+                                                    halo_profile_model='nfw', 
+                                                    z_src_model='single_plane'))**(dict_profile[profile_type]['model_arg']-1) - 1
+
+            else : 
+ 
+                model = np.zeros((rad_Mpc.size))
+    
+                for i in range(rad_Mpc.size):
+                    #dict_profile[profile_type]['model_arg']  * \
+                    model[i] = np.mean(dict_profile[profile_type]['model_func'](rad_Mpc[i], mdelta=mass, 
+                                                    cdelta=conc, z_cluster=lens_redshift, z_source=zrand, 
+                                                    cosmo= clmm_cosmo, 
+                                                    delta_mdef=delta_mdef, 
+                                                    halo_profile_model='nfw', 
+                                                    z_src_model='single_plane'))**(dict_profile[profile_type]['model_arg']-1) - 1
+                
             return model
     
         if profile_type == "redshift depth contrast":
