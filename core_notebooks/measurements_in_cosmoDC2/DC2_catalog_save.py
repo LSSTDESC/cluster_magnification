@@ -18,6 +18,8 @@ print('Catalog loaded')
 print("it's "+ str(datetime.now()))
 
 
+path_for_files = "../../input_data/"
+
 if halo == "True":
     filters = ['halo_mass > 0.5e13','is_central==True']
     halo_selection = extragalactic_cat.get_quantities(['halo_mass', 'redshift','ra', 'dec', 'halo_id'],\
