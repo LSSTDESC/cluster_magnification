@@ -1,5 +1,6 @@
 # cluster_magnification
 Author : M. Ricci
+
 Developpement of the use of magnification biais to constrain cluster masses, tests on cosmoDC2. 
 
 ### The main branch :
