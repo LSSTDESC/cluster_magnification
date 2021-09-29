@@ -4,7 +4,7 @@ Author : M. Ricci
 **Developpement of the use of magnification biais to constrain cluster masses, tests on cosmoDC2.** 
 
 ### The main branch :
-Contains all notebooks associated with the cluster mass measurements from magnification in cosmoDC2. The results are presented in the DESC Note Ricci et al. 2021.
+Contains all notebooks associated with the cluster mass measurements from magnification in cosmoDC2. The results are presented in the DESC Note [Ricci et al. 2021](https://fr.overleaf.com/read/vskkvpmjbrpw).
 
 - The investigation of the background source selection is done in `source_selection_DC2.ipynb`
 - The source and lens catalogs are created by running `DC2_catalog_save.py`
